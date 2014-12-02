@@ -23,4 +23,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'yard', [">= 0.7.0"]
   s.add_development_dependency 'rake', [">= 0"]
   s.add_development_dependency 'guard-rspec'
+  s.add_development_dependency 'thread_safe'
 end

@@ -1,5 +1,6 @@
 require "has_guarded_handlers/version"
 require 'securerandom'
+require 'thread_safe'
 
 #
 # HasGuardedHandlers allows an object's API to provide flexible handler registration, storage and matching to arbitrary events.
@@ -166,7 +167,7 @@ module HasGuardedHandlers
 
   def handlers_of_type(type) # :nodoc:
     return unless hash = guarded_handlers[type]
-    values = []
+    values = ThreadSafe::Array.new
     hash.keys.sort.reverse.each do |key|
       values += hash[key]
     end
@@ -229,6 +230,6 @@ module HasGuardedHandlers
   end
 
   def guarded_handlers # :nodoc:
-    @handlers ||= Hash.new { |h, k| h[k] = Hash.new { |h, k| h[k] = [] } }
+    @handlers ||= ThreadSafe::Hash.new { |h, k| h[k] = ThreadSafe::Hash.new { |h, k| h[k] = ThreadSafe::Array.new } }
   end
 end
