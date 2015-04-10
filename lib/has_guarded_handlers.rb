@@ -1,6 +1,48 @@
 require "has_guarded_handlers/version"
 require 'securerandom'
+require 'thread_safe'
 
+#
+# HasGuardedHandlers allows an object's API to provide flexible handler registration, storage and matching to arbitrary events.
+#
+# HasGuardedHandlers is a module that should be mixed into some object which needs to emit events.
+#
+# See the README for more usage info.
+#
+# @author Ben Langfeld <ben@langfeld.me>
+#
+# @example Simple usage
+#
+#   require 'has_guarded_handlers'
+#
+#   class A
+#     include HasGuardedHandlers
+#   end
+#
+#   a = A.new
+#   a.register_handler :event do |event|
+#     puts "Handled the event #{event.inspect}"
+#   end
+#
+#   a.trigger_handler :event, "Foo!"
+#
+# @example Guarding event handlers
+#
+#   require 'has_guarded_handlers'
+#
+#   class A
+#     include HasGuardedHandlers
+#   end
+#
+#   a = A.new
+#   a.register_handler :event, :type => :foo do |event|
+#     puts "Handled the event of type #{event.type} with value #{event.value}"
+#   end
+#
+#   Event = Class.new Struct.new(:type, :value)
+#
+#   a.trigger_handler :event, Event.new(:foo, 'bar')
+#
 module HasGuardedHandlers
   # Register a handler
   #
@@ -187,7 +229,10 @@ module HasGuardedHandlers
     end
   end
 
-  def guarded_handlers # :nodoc:
-    @handlers ||= Hash.new { |h, k| h[k] = Hash.new { |h, k| h[k] = [] } }
+  def guarded_handlers
+    @handlers ||= ThreadSafe::Cache.new do |handlers, key|
+      handlers.fetch_or_store(key, ThreadSafe::Cache.new { |h, k| h.fetch_or_store(k, []) })
+    end
   end
+
 end
